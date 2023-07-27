@@ -4,7 +4,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -17,7 +16,6 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -35,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
     private Button btnStart;
     private Button btnSolve;
     private Button btnSave;
-
     private RecyclerView rvSudokuBoard;
 
     @Override
@@ -43,14 +40,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 //        initDB(convertIntToSudokuCells(callFromDatabase()));
+        // Initialize game settings
         initDB();
         gameOver = true;
         initBoard(gameOver);
+
         handler = new Handler();
+
+        // connect view objects
         tvTimer = findViewById(R.id.tvTimer);
         btnStart = findViewById(R.id.btnStart);
         btnSolve = findViewById(R.id.btnSolve);
         btnSave = findViewById(R.id.btnSave);
+        // listen for click event on btn
         btnStart.setOnClickListener(view -> {
             if(gameOver) {
                 startTimer();
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
             }
             else { stopTimer(); }
         });
+        // listen for click event on btn
         btnSolve.setOnClickListener(view -> {
             if (!gameOver) {
                 solvingInProgress = true;
@@ -69,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
                 rvSudokuBoard.setVisibility(view.INVISIBLE);
             }
         });
+        // listen for click event on btn
         btnSave.setOnClickListener(view -> {
             if(sudokuAdapter.getSudokuData() != null)
                 showDatabaseAlert(sudokuAdapter.getSudokuData());
@@ -78,6 +82,23 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Example Call:
+     * initDB();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return void
+     *
+     * Dependencies:
+     * @see SudokuDatabaseMngr: A custom class to manage SQLite database connections for the Sudoku app.
+     * @see SudokuContract: A class containing constants for the database schema, including table name and column names.
+     *
+     * Description:
+     * This function initializes the database connections and inserts initial data (a 9x9 Sudoku board) into the database.
+     */
     private void initDB() {
         // Initialize Database Connections
         SudokuDatabaseMngr dbManager = new SudokuDatabaseMngr(this.getApplicationContext());
@@ -112,7 +133,24 @@ public class MainActivity extends AppCompatActivity {
         db.close();
         dbManager.close();
     }
-
+    /**
+     * Example Call:
+     * initDB(sudokuBoard);
+     *
+     * Parameters:
+     * @param sudokuBoard (SudokuCell[][]): A 9x9 two-dimensional array representing the Sudoku board. Each element of the array is a SudokuCell object containing the value of the cell.
+     *
+     * Returns:
+     * @return void
+     *
+     * Dependencies:
+     * @see SudokuCell: The class representing a cell in the Sudoku board, containing cell value and related information.
+     * @see SudokuDatabaseMngr: A custom class to manage SQLite database connections for the Sudoku app.
+     * @see SudokuContract: A class containing constants for the database schema, including table name and column names.
+     *
+     * Description:
+     * Same as above, except calls the database to get initial board data rather than an array
+     */
     private void initDB(SudokuCell[][] sudokuBoard) {
         // Initialize Database Connections
         SudokuDatabaseMngr dbManager = new SudokuDatabaseMngr(this.getApplicationContext());
@@ -134,7 +172,25 @@ public class MainActivity extends AppCompatActivity {
         db.close();
         dbManager.close();
     }
-
+    /**
+     * Example Call:
+     * --------------
+     * initBoard(true);
+     *
+     * Parameters:
+     * --------------
+     * @param gameOver (boolean): A boolean flag indicating whether the game is over or not. If true, the Sudoku board will be read-only, and users cannot modify the cells. If false, users can interact with the Sudoku board.
+     *
+     * Returns:
+     * --------------
+     * @return void
+     *
+     * Dependencies:
+     * --------------
+     * @see SudokuCell: The class representing a cell in the Sudoku board, containing cell value and related information.
+     * @see SudokuAdapter: The custom RecyclerView adapter responsible for rendering SudokuCell objects within the RecyclerView.
+     *
+     */
     private void initBoard(boolean gameOver) {
         // Initialize RecyclerView and adapter
         SudokuCell[][] sudokuBoard = convertIntToSudokuCells(callFromDatabase());
@@ -143,7 +199,19 @@ public class MainActivity extends AppCompatActivity {
         rvSudokuBoard.setLayoutManager(new GridLayoutManager(this, 9));
         rvSudokuBoard.setAdapter(sudokuAdapter);
     }
-
+    /**
+     * Example Call:
+     * startTimer();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return void
+     *
+     * Description:
+     * Starts the timer for the Sudoku game, initializes the game state, and sets up the game board.
+     */
     private void startTimer() {
         startTime = System.currentTimeMillis();
         gameOver = false;
@@ -152,7 +220,19 @@ public class MainActivity extends AppCompatActivity {
         tvTimer.setText(calculateTime(startTime, startTime));
         initBoard(gameOver);
     }
-
+    /**
+     * Example Call:
+     * updateTimer();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return void
+     *
+     * Description:
+     * Updates the timer displayed on the UI for the Sudoku game. The function uses a handler to schedule periodic updates of the timer while the game is active (not over).
+     */
     private void updateTimer() {
         handler.post(() -> {
             if(!gameOver) {
@@ -162,7 +242,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
+    /**
+     * Example Call:
+     * stopTimer();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return void
+     *
+     * Description:
+     * Stops the timer for the Sudoku game and updates the game state to indicate that the game is over. The function also updates the UI to display the final time and changes the text of the start button to "Restart".
+     */
     private void stopTimer() {
         if (!gameOver) {
             long endTime = System.currentTimeMillis();
@@ -172,8 +264,22 @@ public class MainActivity extends AppCompatActivity {
             sudokuAdapter.setGameOver(gameOver);
         }
     }
-
     // https://www.youtube.com/watch?v=MlyTq-xVkQE
+    /**
+     * Example Call:
+     * boolean result = solveNextStep();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return boolean - True if Sudoku is successfully solved, false if no solution exists.
+     *
+     * Description:
+     * Attempts to solve the next step in the Sudoku puzzle using a backtracking algorithm.
+     * It chooses a spot, tries placing a number, and then backtracks if the number doesn't lead to a solution.
+     * The Sudoku puzzle is updated in the process using the `sudokuAdapter`.
+     */
     private boolean solveNextStep() {
         SudokuCell cellToFill = chooseSpot();
         if (cellToFill == null) {
@@ -202,6 +308,22 @@ public class MainActivity extends AppCompatActivity {
         return false;
 
     }
+    /**
+     * Example Call:
+     * SudokuCell cell = chooseSpot();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return SudokuCell - A randomly chosen empty cell (cell with a value of 0) from the Sudoku board. If there are no empty cells, the function returns null.
+     *
+     * Description:
+     * Randomly selects an empty cell (cell with a value of 0) from the Sudoku board to be filled with a number during the Sudoku solving process.
+     * The function iterates through the entire Sudoku board and compiles a list of empty cells.
+     * It then selects a random cell from the list and returns it.
+     * If there are no empty cells on the board, the function returns null, indicating that the Sudoku puzzle is already solved or there's no solution for the current configuration.
+     */
     private SudokuCell chooseSpot() {
         Random random = new Random();
         List<SudokuCell> emptyCells = new ArrayList<>();
@@ -222,7 +344,23 @@ public class MainActivity extends AppCompatActivity {
 
         return null;
     }
-
+    /**
+     * Example Call:
+     * boolean isValid = isValidPlacement(row, col, num);
+     *
+     * Parameters:
+     * @param row (int): The row index of the cell to be checked.
+     * @param col (int): The column index of the cell to be checked.
+     * @param num (int): The number to be placed in the cell and checked for validity.
+     *
+     * Returns:
+     * @return boolean - True if placing 'num' in the cell at position (row, col) is valid, false otherwise.
+     *
+     * Description:
+     * Checks if placing a given 'num' in the cell at position (row, col) of the Sudoku board is a valid move according to Sudoku rules.
+     * The function checks the row, column, and the corresponding 3x3 sub-grid for any conflicts with 'num'.
+     * If there are no conflicts, the placement is considered valid, and the function returns true. Otherwise, it returns false, indicating an invalid placement.
+     */
     private boolean isValidPlacement(int row, int col, int num) {
         for (int i = 0; i < 9; i++) {
             if (sudokuAdapter.getSudokuData()[row][i].getValue() == num || sudokuAdapter.getSudokuData()[i][col].getValue() == num) {
@@ -242,7 +380,20 @@ public class MainActivity extends AppCompatActivity {
 
         return true;
     }
-
+    /**
+     * Example Call:
+     * String formattedTime = calculateTime(currentTime, pastTime);
+     *
+     * Parameters:
+     * @param currentTime (long): The current time in milliseconds (usually obtained using System.currentTimeMillis()).
+     * @param pastTime (long): The past time in milliseconds from which the time difference is calculated.
+     *
+     * Returns:
+     * @return String - A formatted string representing the time difference between currentTime and pastTime in the format "HH:mm:ss".
+     *
+     * Description:
+     * Calculates the time difference between two given timestamps (currentTime and pastTime)
+     */
     private String calculateTime(long currentTime, long pastTime) {
         long timeTaken = currentTime - pastTime;
         long seconds = (timeTaken / 1000) % 60;
@@ -250,7 +401,23 @@ public class MainActivity extends AppCompatActivity {
         long hours = (timeTaken / (1000 * 60 * 60) % 24);
         return(String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds));
     }
-
+    /**
+     * Example Call:
+     * int[][] sudokuData = callFromDatabase();
+     *
+     * Parameters:
+     * None
+     *
+     * Returns:
+     * @return int[][] - A 9x9 two-dimensional array representing the Sudoku board data retrieved from the database.
+     *
+     * Dependencies:
+     * @see SudokuDatabaseMngr: A custom class to manage SQLite database connections for the Sudoku app.
+     * @see SudokuContract: A class containing constants for the database schema, including table name and column names.
+     *
+     * Description:
+     * Retrieves the Sudoku board data from the database and converts it into a 9x9 two-dimensional array.
+     */
     private int[][] callFromDatabase() {
         SudokuDatabaseMngr dbManager = new SudokuDatabaseMngr(this);
         SQLiteDatabase db = dbManager.getReadableDatabase();
@@ -280,7 +447,27 @@ public class MainActivity extends AppCompatActivity {
 
         return(sudokuData);
     }
-
+    /**
+     * Example Call:
+     * showDatabaseAlert(sudokuBoard);
+     *
+     * Parameters:
+     * @param sudokuBoard (SudokuCell[][]): A 9x9 two-dimensional array representing the Sudoku board.
+     *
+     * Returns:
+     * @return void
+     *
+     * Description:
+     * Displays an alert dialog with options for interacting with the Sudoku database.
+     *   1. Save Database: Initializes the database and inserts the data from `sudokuBoard`.
+     *   2. Load Board: Initializes the RecyclerView and adapter for the Sudoku board using `initBoard` function.
+     *   3. Cancel: Closes the dialog without performing any action.
+     *
+     * Dependencies:
+     * @see AlertDialog: A class provided by Android SDK to create alert dialogs.
+     * @see SudokuCell: The class representing a cell in the Sudoku board, containing cell value and related information.
+     *
+     */
     private void showDatabaseAlert(SudokuCell[][] sudokuBoard) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select an Option")
@@ -299,13 +486,31 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .show();
     }
-
-    private SudokuCell[][] convertIntToSudokuCells(int[][] intArray)
+    /**
+     * Example Call:
+     * SudokuCell[][] sudokuCells = convertIntToSudokuCells(sudokuBoard);
+     *
+     * Parameters:
+     * @param sudokuBoard (int[][]): A 9x9 two-dimensional array representing the Sudoku board with integer values.
+     *
+     * Returns:
+     * @return SudokuCell[][] - A 9x9 two-dimensional array of SudokuCell objects.
+     *
+     * Description:
+     * Converts a 9x9 two-dimensional array of integers (sudokuBoard) representing the Sudoku board into a 9x9 two-dimensional array of SudokuCell objects (sudokuCells).
+     * The function iterates through each cell of intArray, creates a new SudokuCell object with the row, column, and value information, and assigns it to the corresponding cell in sudokuCells.
+     * The resulting array contains SudokuCell objects representing each cell in the Sudoku board with their associated data.
+     *
+     * Dependencies:
+     * @see SudokuCell: The class representing a cell in the Sudoku board, containing cell value and related information.
+     *
+     */
+    private SudokuCell[][] convertIntToSudokuCells(int[][] sudokuBoard)
     {
         SudokuCell[][] sudokuCells = new SudokuCell[9][9];
         for (int row = 0; row < 9; row ++) {
             for (int col = 0; col < 9; col++) {
-                int value = intArray[row][col];
+                int value = sudokuBoard[row][col];
                 sudokuCells[row][col] = new SudokuCell(row, col, value);
             }
         }
@@ -314,7 +519,10 @@ public class MainActivity extends AppCompatActivity {
 }
 
 /**
- * Outline Tables and Data Rows
+ * Class: SudokuContract
+ *
+ * Description:
+ * A contract class that defines the database schema for the Sudoku app.
  */
 class SudokuContract {
     public static class SudokuEntry implements BaseColumns {
@@ -325,31 +533,14 @@ class SudokuContract {
     }
 }
 
-// Visual Aid
-//int[][] sudokuBoard = {
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0, 0, 0, 0, 0, 0, 0, 0, 0}
-//};
-//int[][] sudokuBoard = {
-//        {5, 3, 0, 0, 7, 0, 0, 0, 0},
-//        {6, 0, 0, 1, 9, 5, 0, 0, 0},
-//        {0, 9, 8, 0, 0, 0, 0, 6, 0},
-//        {8, 0, 0, 0, 6, 0, 0, 0, 3},
-//        {4, 0, 0, 8, 0, 3, 0, 0, 1},
-//        {7, 0, 0, 0, 2, 0, 0, 0, 6},
-//        {0, 6, 0, 0, 0, 0, 2, 8, 0},
-//        {0, 0, 0, 4, 1, 9, 0, 0, 5},
-//        {0, 0, 0, 0, 8, 0, 0, 7, 9}
-//};
-
-// Create and manage the database using a Database Manager class
+/**
+ * Class: SudokuDatabaseMngr
+ * Extends: SQLiteOpenHelper
+ *
+ * Description:
+ * A custom class that manages the SQLite database for the Sudoku app.
+ * It extends the SQLiteOpenHelper class and handles database creation and version management.
+ */
 class SudokuDatabaseMngr extends SQLiteOpenHelper {
     public SudokuDatabaseMngr(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

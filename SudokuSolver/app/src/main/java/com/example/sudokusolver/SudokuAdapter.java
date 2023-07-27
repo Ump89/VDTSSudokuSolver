@@ -68,7 +68,21 @@ public class SudokuAdapter extends RecyclerView.Adapter<SudokuCellViewHolder> {
     public SudokuCell[][] getSudokuData() {
         return sudokuData;
     }
-
+    /**
+     * Example Call:
+     * showNumberInputDialog(row, col);
+     *
+     * Parameters:
+     * @param row (int): The row index of the cell for which the number input dialog is displayed.
+     * @param col (int): The column index of the cell for which the number input dialog is displayed.
+     *
+     * Returns:
+     * @return void
+     *
+     * Description:
+     * Displays an alert dialog with an input field for the user.
+     *
+     */
     private void showNumberInputDialog(int row, int col) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Enter a number");
