@@ -41,7 +41,7 @@ public class SudokuAdapter extends RecyclerView.Adapter<SudokuCellViewHolder> {
             holder.tvSudokuNumber.setText(String.valueOf(value));
         }
         else {
-            holder.tvSudokuNumber.setText("X");
+            holder.tvSudokuNumber.setText("x");
         }
         if(!gameOver){
             holder.tvSudokuNumber.setOnClickListener(view -> {

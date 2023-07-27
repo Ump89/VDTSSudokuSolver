@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private Handler handler;
     private Long startTime;
     private boolean gameOver;
+    private boolean solvingInProgress;
 
     // View Objects
     private TextView tvTimer;
@@ -41,7 +42,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initDB(convertIntToSudokuCells(callFromDatabase()));
+//        initDB(convertIntToSudokuCells(callFromDatabase()));
+        initDB();
         gameOver = true;
         initBoard(gameOver);
         handler = new Handler();
@@ -50,11 +52,22 @@ public class MainActivity extends AppCompatActivity {
         btnSolve = findViewById(R.id.btnSolve);
         btnSave = findViewById(R.id.btnSave);
         btnStart.setOnClickListener(view -> {
-            if(gameOver) { startTimer(); }
+            if(gameOver) {
+                startTimer();
+                rvSudokuBoard.setVisibility(view.VISIBLE);
+            }
             else { stopTimer(); }
         });
         btnSolve.setOnClickListener(view -> {
-            if (!gameOver) solveNextStep();
+            if (!gameOver) {
+                solvingInProgress = true;
+                solveNextStep();
+            }
+            else if (!solvingInProgress){
+                gameOver = true;
+                stopTimer();
+                rvSudokuBoard.setVisibility(view.INVISIBLE);
+            }
         });
         btnSave.setOnClickListener(view -> {
             if(sudokuAdapter.getSudokuData() != null)
@@ -65,40 +78,40 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-//    private void initDB() {
-//        // Initialize Database Connections
-//        SudokuDatabaseMngr dbManager = new SudokuDatabaseMngr(this.getApplicationContext());
-//        SQLiteDatabase db = dbManager.getWritableDatabase();
-//
-//        // Data to insert into tables
-//        int[][] sudokuBoard = {
-//                {5, 3, 0, 0, 7, 0, 0, 0, 0},
-//                {6, 0, 0, 1, 9, 5, 0, 0, 0},
-//                {0, 9, 8, 0, 0, 0, 0, 6, 0},
-//                {8, 0, 0, 0, 6, 0, 0, 0, 3},
-//                {4, 0, 0, 8, 0, 3, 0, 0, 1},
-//                {7, 0, 0, 0, 2, 0, 0, 0, 6},
-//                {0, 6, 0, 0, 0, 0, 2, 8, 0},
-//                {0, 0, 0, 4, 1, 9, 0, 0, 5},
-//                {0, 0, 0, 0, 8, 0, 0, 7, 9}
-//        };
-//
-//        // Send data to database
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                int value = sudokuBoard[row][col];
-//                if(value > -1) {
-//                    ContentValues cv = new ContentValues();
-//                    cv.put(SudokuContract.SudokuEntry.COLUMN_ROW, row);
-//                    cv.put(SudokuContract.SudokuEntry.COLUMN_COL, col);
-//                    cv.put(SudokuContract.SudokuEntry.COLUMN_VALUE, value);
-//                    db.insert(SudokuContract.SudokuEntry.TABLE_NAME, null, cv);
-//                }
-//            }
-//        }
-//        db.close();
-//        dbManager.close();
-//    }
+    private void initDB() {
+        // Initialize Database Connections
+        SudokuDatabaseMngr dbManager = new SudokuDatabaseMngr(this.getApplicationContext());
+        SQLiteDatabase db = dbManager.getWritableDatabase();
+
+        // Data to insert into tables
+        int[][] sudokuBoard = {
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0}
+        };
+
+        // Send data to database
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                int value = sudokuBoard[row][col];
+                if(value > -1) {
+                    ContentValues cv = new ContentValues();
+                    cv.put(SudokuContract.SudokuEntry.COLUMN_ROW, row);
+                    cv.put(SudokuContract.SudokuEntry.COLUMN_COL, col);
+                    cv.put(SudokuContract.SudokuEntry.COLUMN_VALUE, value);
+                    db.insert(SudokuContract.SudokuEntry.TABLE_NAME, null, cv);
+                }
+            }
+        }
+        db.close();
+        dbManager.close();
+    }
 
     private void initDB(SudokuCell[][] sudokuBoard) {
         // Initialize Database Connections
@@ -156,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
             tvTimer.setText(calculateTime(endTime, startTime));
             gameOver = true;
             btnStart.setText("Restart");
-            initBoard(gameOver);
+            sudokuAdapter.setGameOver(gameOver);
         }
     }
 
@@ -165,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
         SudokuCell cellToFill = chooseSpot();
         if (cellToFill == null) {
             // Sudoku is already solved or no solution exists
+            solvingInProgress = false; // Reset the flag
             return true;
         }
 
@@ -172,17 +186,13 @@ public class MainActivity extends AppCompatActivity {
         int col = cellToFill.getCol();
 
         // Solve the cell
-        for (int num = 1; num <= 9; num++) {
-            if (isValidPlacement(row, col, num)) {
+        for (int num = 1; num <=9; num++) {
+            if(isValidPlacement(row, col, num)) {
                 cellToFill.setValue(num);
                 sudokuAdapter.notifyItemChanged(row * 9 + col);
 
-                // Recursively try to solve the next cell
-                if (solveNextStep()) {
-                    return true;
-                }
+                if(solveNextStep()) { return true; }
 
-                // If the current number doesn't lead to a solution, backtrack and try the next number
                 cellToFill.setValue(0);
                 sudokuAdapter.notifyItemChanged(row * 9 + col);
             }
@@ -190,6 +200,7 @@ public class MainActivity extends AppCompatActivity {
 
         // No valid number found for the cell, backtrack to previous cells
         return false;
+
     }
     private SudokuCell chooseSpot() {
         Random random = new Random();
@@ -210,16 +221,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return null;
-    }
-
-    private List<Integer> getValidNumbers(int row, int col) {
-        List<Integer> validNumbers = new ArrayList<>();
-        for (int num = 1; num <= 9; num++){
-            if(isValidPlacement(row, col, num)) {
-                validNumbers.add(num);
-            }
-        }
-        return validNumbers;
     }
 
     private boolean isValidPlacement(int row, int col, int num) {
@@ -299,10 +300,6 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void updateSudokuData(SudokuCell[][] newData) {
-        sudokuAdapter.updateSudokuData(newData);
-    }
-
     private SudokuCell[][] convertIntToSudokuCells(int[][] intArray)
     {
         SudokuCell[][] sudokuCells = new SudokuCell[9][9];
@@ -339,6 +336,17 @@ class SudokuContract {
 //        {0, 0, 0, 0, 0, 0, 0, 0, 0},
 //        {0, 0, 0, 0, 0, 0, 0, 0, 0},
 //        {0, 0, 0, 0, 0, 0, 0, 0, 0}
+//};
+//int[][] sudokuBoard = {
+//        {5, 3, 0, 0, 7, 0, 0, 0, 0},
+//        {6, 0, 0, 1, 9, 5, 0, 0, 0},
+//        {0, 9, 8, 0, 0, 0, 0, 6, 0},
+//        {8, 0, 0, 0, 6, 0, 0, 0, 3},
+//        {4, 0, 0, 8, 0, 3, 0, 0, 1},
+//        {7, 0, 0, 0, 2, 0, 0, 0, 6},
+//        {0, 6, 0, 0, 0, 0, 2, 8, 0},
+//        {0, 0, 0, 4, 1, 9, 0, 0, 5},
+//        {0, 0, 0, 0, 8, 0, 0, 7, 9}
 //};
 
 // Create and manage the database using a Database Manager class
