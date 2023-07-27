@@ -3,4 +3,5 @@
     <string name="tvTitle">! Sudoku Solver !</string>
     <string name="btnStart">Start!</string>
     <string name="btnSolve">Solve</string>
+    <string name="btnSave">Save</string>
 </resources>
