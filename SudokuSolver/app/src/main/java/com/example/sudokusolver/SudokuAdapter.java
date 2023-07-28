@@ -13,6 +13,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SudokuAdapter extends RecyclerView.Adapter<SudokuCellViewHolder> {
     private final Context context;
     private boolean gameOver;
@@ -43,10 +46,16 @@ public class SudokuAdapter extends RecyclerView.Adapter<SudokuCellViewHolder> {
         else {
             holder.tvSudokuNumber.setText("x");
         }
-        if(!gameOver){
+        if (!gameOver) {
             holder.tvSudokuNumber.setOnClickListener(view -> {
-                if(value == 0) {
-                    showNumberInputDialog(row, col);
+                if (value == 0) {
+                    List<Integer> validNumbers = getValidNumbers(row, col);
+                    if (!validNumbers.isEmpty()) {
+                        showNumberInputDialog(row, col);
+                    } else {
+                        // No valid numbers for this cell, show an error or toast message
+                        Toast.makeText(view.getContext(), "No valid numbers for this cell", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
         }
@@ -67,6 +76,34 @@ public class SudokuAdapter extends RecyclerView.Adapter<SudokuCellViewHolder> {
 
     public SudokuCell[][] getSudokuData() {
         return sudokuData;
+    }
+    private List<Integer> getValidNumbers(int row, int col) {
+        List<Integer> validNumbers = new ArrayList<>();
+        for (int num = 1; num <= 9; num++){
+            if (isValidPlacement(row, col, num)) {
+                validNumbers.add(num);
+            }
+        }
+        return validNumbers;
+    }
+    private boolean isValidPlacement(int row, int col, int num) {
+        for (int i = 0; i < 9; i++) {
+            if (sudokuData[row][i].getValue() == num || sudokuData[i][col].getValue() == num) {
+                return false;
+            }
+        }
+
+        int subGridRow = (row / 3) * 3;
+        int subGridCol = (col / 3) * 3;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if(sudokuData[subGridRow + i][subGridCol + j].getValue() == num) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
     /**
      * Example Call:

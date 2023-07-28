@@ -20,13 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity {
     private SudokuAdapter sudokuAdapter;
     private Handler handler;
     private Long startTime;
     private boolean gameOver;
-    private boolean solvingInProgress;
+    private boolean solvingInProgress = true;
 
     // View Objects
     private TextView tvTimer;
@@ -58,7 +59,10 @@ public class MainActivity extends AppCompatActivity {
                 startTimer();
                 rvSudokuBoard.setVisibility(view.VISIBLE);
             }
-            else { stopTimer(); }
+            else {
+                stopTimer();
+                initBoard(gameOver);
+            }
         });
         // listen for click event on btn
         btnSolve.setOnClickListener(view -> {
@@ -281,33 +285,61 @@ public class MainActivity extends AppCompatActivity {
      * The Sudoku puzzle is updated in the process using the `sudokuAdapter`.
      */
     private boolean solveNextStep() {
-        SudokuCell cellToFill = chooseSpot();
-        if (cellToFill == null) {
-            // Sudoku is already solved or no solution exists
-            solvingInProgress = false; // Reset the flag
-            return true;
-        }
+        Stack<SudokuCell> stack = new Stack<>();
+        stack.push(chooseSpot());
 
-        int row = cellToFill.getRow();
-        int col = cellToFill.getCol();
+        while (!stack.isEmpty()) {
+            SudokuCell cellToFill = stack.pop();
 
-        // Solve the cell
-        for (int num = 1; num <=9; num++) {
-            if(isValidPlacement(row, col, num)) {
-                cellToFill.setValue(num);
-                sudokuAdapter.notifyItemChanged(row * 9 + col);
+            if (cellToFill == null) {
+                solvingInProgress = false;
+                return true;
+            }
 
-                if(solveNextStep()) { return true; }
+            int row = cellToFill.getRow();
+            int col = cellToFill.getCol();
 
-                cellToFill.setValue(0);
-                sudokuAdapter.notifyItemChanged(row * 9 + col);
+            int num = cellToFill.getValue();
+            boolean backtrack = true;
+
+            while (num <= 9) {
+                if (isValidPlacement(row, col, num)) {
+                    cellToFill.setValue(num);
+                    sudokuAdapter.notifyItemChanged(row * 9 + col);
+
+                    if (!solveNextStep()) {
+                        solvingInProgress = false;
+                        return true;
+                    }
+
+                    stack.push(chooseSpot());
+                    backtrack = false;
+                    break;
+                }
+                num++;
             }
         }
-
-        // No valid number found for the cell, backtrack to previous cells
+        solvingInProgress = true;
         return false;
-
     }
+
+//            // Solve the cell
+//            for (int num = 1; num <=9; num++) {
+//                if(isValidPlacement(row, col, num)) {
+//                    cellToFill.setValue(num);
+//                    sudokuAdapter.notifyItemChanged(row * 9 + col);
+//
+//                    if(solveNextStep()) { return true; }
+//
+//                    cellToFill.setValue(0);
+//                    sudokuAdapter.notifyItemChanged(row * 9 + col);
+//                }
+//            }
+//        }
+//        // No valid number found for the cell, backtrack to previous cells
+//        solvingInProgress = true;
+//        return false;
+//    }
     /**
      * Example Call:
      * SudokuCell cell = chooseSpot();
